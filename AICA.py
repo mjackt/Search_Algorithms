@@ -1,5 +1,6 @@
 from time import process_time
 import math
+import glob
 
 #takes array returns index with a dash
 def findDash(line):
@@ -130,7 +131,7 @@ def outputMaze(path,originMaze,outFile):
         currenty = path[i][1]
         rows[currenty][currentx] ="?"
     #writing to .txt section
-    searchResult = open(outFile,'w')
+    searchResult = open("results/"+outFile[5:],'w')
     #taking each row of characters and converting back to one string seperated by spaces
     for line in rows:
         line = ' '.join(line)
@@ -140,23 +141,28 @@ def outputMaze(path,originMaze,outFile):
     searchResult.close()
 
 def main():
-    maze=(input("Please enter the name of your maze\nMust be a .txt file placed in same directory as this .py file\n"))
-    graph,start,goal = mazeToDict(maze)
+    maze=(input("Place all mazes in the mazes folder\nThey must be of .txt format\nWhen this is done press enter\n"))
+    foundMazes=[]
+    for name in glob.glob('mazes/*.txt'):
+        foundMazes.append(name)
+    
+    for maze in foundMazes:
+        graph,start,goal = mazeToDict(maze)
 
-    startTime = process_time() 
-    depthResult = depthFirstSearch(graph,start,goal)
-    endTime = process_time()
-    depthTime = endTime-startTime
-    outputMaze(depthResult[0],maze,maze+"_DFS_RESULT.txt")
+        startTime = process_time() 
+        depthResult = depthFirstSearch(graph,start,goal)
+        endTime = process_time()
+        depthTime = endTime-startTime
+        outputMaze(depthResult[0],maze,maze+"_DFS_RESULT.txt")
 
-    startTime = process_time()
-    greedyResult = greedySearch(graph,start,goal)
-    endTime = process_time()
-    greedyTime = endTime-startTime
-    outputMaze(greedyResult[0],maze,maze+"_GREEDY_RESULT.txt")
+        startTime = process_time()
+        greedyResult = greedySearch(graph,start,goal)
+        endTime = process_time()
+        greedyTime = endTime-startTime
+        outputMaze(greedyResult[0],maze,maze+"_GREEDY_RESULT.txt")
 
-    print("\nYour maze solution is now available in a .txt file\n")
-    print("####Depth First Search####\nStatistics:\nNodes explored: "+str(depthResult[1])+"\nTime taken: "+str(depthTime)+"\nPath length: "+str(len(depthResult[0]))+"\n\n")
-    print("####Greedy Search####\nStatistics:\nNodes explored: "+str(greedyResult[1])+"\nTime taken: "+str(greedyTime)+"\nPath length: "+str(len(greedyResult[0]))+"\n")
+        print("\n----"+maze+"----\n")
+        print("####Depth First Search####\nStatistics:\nNodes explored: "+str(depthResult[1])+"\nTime taken: "+str(depthTime)+"\nPath length: "+str(len(depthResult[0]))+"\n\n")
+        print("####Greedy Search####\nStatistics:\nNodes explored: "+str(greedyResult[1])+"\nTime taken: "+str(greedyTime)+"\nPath length: "+str(len(greedyResult[0]))+"\n")
 if __name__ == "__main__":
     main()
