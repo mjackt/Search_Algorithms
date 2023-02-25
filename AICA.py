@@ -114,6 +114,9 @@ def mazeToDict(filename):
                 if x<len(Coord2DArray[y])-1:
                     if Coord2DArray[y][x+1]=="-":
                         dictionary[(x,y)].append((x+1,y))
+
+            if Coord2DArray[y][x] not in ["-","#"," "]:
+                raise Exception()
     return (dictionary,start,goal)
 
 #path is the result from the search
@@ -131,7 +134,7 @@ def outputMaze(path,originMaze,outFile):
         currenty = path[i][1]
         rows[currenty][currentx] ="?"
     #writing to .txt section
-    searchResult = open("results/"+outFile[5:],'w')
+    searchResult = open("results/"+outFile[6:],'w')
     #taking each row of characters and converting back to one string seperated by spaces
     for line in rows:
         line = ' '.join(line)
@@ -141,28 +144,41 @@ def outputMaze(path,originMaze,outFile):
     searchResult.close()
 
 def main():
-    maze=(input("Place all mazes in the mazes folder\nThey must be of .txt format\nWhen this is done press enter\n"))
+    maze=(input("Place all mazes in the mazes folder\nThey must be of .txt format\nPlease also ensure there is an accompaning folder called results\nWhen this is done press enter\n"))
     foundMazes=[]
     for name in glob.glob('mazes/*.txt'):
         foundMazes.append(name)
     
     for maze in foundMazes:
-        graph,start,goal = mazeToDict(maze)
+        try:
+            graph,start,goal = mazeToDict(maze)
+        except:
+            print("Seems like there was an issue with "+maze[6:]+"\nIt could be an invalid filename or the structure of the maze isn't recognised\n")
+            continue
+        
+        #if any exceptions get raised it will continue with the next maze
+        try:
+            startTime = process_time() 
+            depthResult = depthFirstSearch(graph,start,goal)
+            endTime = process_time()
+            depthTime = endTime-startTime
+            outputMaze(depthResult[0],maze,maze+"_DFS_RESULT.txt")
 
-        startTime = process_time() 
-        depthResult = depthFirstSearch(graph,start,goal)
-        endTime = process_time()
-        depthTime = endTime-startTime
-        outputMaze(depthResult[0],maze,maze+"_DFS_RESULT.txt")
+            startTime = process_time()
+            greedyResult = greedySearch(graph,start,goal)
+            endTime = process_time()
+            greedyTime = endTime-startTime
+            outputMaze(greedyResult[0],maze,maze+"_GREEDY_RESULT.txt")
 
-        startTime = process_time()
-        greedyResult = greedySearch(graph,start,goal)
-        endTime = process_time()
-        greedyTime = endTime-startTime
-        outputMaze(greedyResult[0],maze,maze+"_GREEDY_RESULT.txt")
+            print("\n----"+maze+"----\n")
+            print("####Depth First Search####\nStatistics:\nNodes explored: "+str(depthResult[1])+"\nTime taken: "+str(depthTime)+"\nPath length: "+str(len(depthResult[0]))+"\n\n")
+            print("####Greedy Search####\nStatistics:\nNodes explored: "+str(greedyResult[1])+"\nTime taken: "+str(greedyTime)+"\nPath length: "+str(len(greedyResult[0]))+"\n")
 
-        print("\n----"+maze+"----\n")
-        print("####Depth First Search####\nStatistics:\nNodes explored: "+str(depthResult[1])+"\nTime taken: "+str(depthTime)+"\nPath length: "+str(len(depthResult[0]))+"\n\n")
-        print("####Greedy Search####\nStatistics:\nNodes explored: "+str(greedyResult[1])+"\nTime taken: "+str(greedyTime)+"\nPath length: "+str(len(greedyResult[0]))+"\n")
+        except Exception as e:
+            print(e)
+            continue
+
+    print("All done.\nTo see your solutions head to the results folder")
+        
 if __name__ == "__main__":
     main()
