@@ -8,6 +8,7 @@ def findDash(line):
 
 #Takes a graph in the form of a dictionary as created by mazeToDict
 def depthFirstSearch(graph,start, goal):
+    explored = 0
     visited = set()
     #The stack stores tuples containg the nodes that need to be visted and the path that got to said node
     #This eliminates need for having checks to remove nodes from path when backtracking which was slowing it down massively
@@ -16,10 +17,11 @@ def depthFirstSearch(graph,start, goal):
     stack = [(start, [start])]
 
     while len(stack) != 0:
+        explored += 1
         (current, route) = stack.pop()
         if current not in visited:
             if current == goal:
-                return route
+                return (route,explored)
             visited.add(current)
             for neighbor in graph[current]:
                 stack.append((neighbor, route + [neighbor]))
@@ -95,7 +97,13 @@ def outputMaze(path,originMaze):
     #now rows is just a list of strings
     searchResult.close()
 
-maze = "maze-Medium.txt"
-graph,start,goal = mazeToDict(maze)
-result = depthFirstSearch(graph,start,goal)
-outputMaze(result,maze)
+def main():
+    maze=(input("Please enter the name of your maze\nMust be a .txt file placed in same directory as this .py file\n"))
+    graph,start,goal = mazeToDict(maze)
+    result = depthFirstSearch(graph,start,goal)
+    time=0
+    outputMaze(result[0],maze)
+    print("\nYour maze solution is now available in searchResult.txt\nStatistics:\nNodes explored: "+str(result[1])+"\nTime taken: "+str(time)+"\nPath length: "+str(len(result[0]))+"\n")
+
+if __name__ == "__main__":
+    main()
