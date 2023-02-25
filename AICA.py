@@ -1,4 +1,5 @@
-import time
+from time import process_time
+import math
 
 #takes array returns index with a dash
 def findDash(line):
@@ -7,7 +8,7 @@ def findDash(line):
             return i
 
 #Takes a graph in the form of a dictionary as created by mazeToDict
-def depthFirstSearch(graph,start, goal):
+def depthFirstSearch(graph,start,goal):
     explored = 0
     visited = set()
     #The stack stores tuples containg the nodes that need to be visted and the path that got to said node
@@ -28,6 +29,47 @@ def depthFirstSearch(graph,start, goal):
     #if the stack becomes empty every accesible node has been visited and no path has been found
     return None
 
+def greedySearch(graph,start,goal):
+    explored = 0
+    visited = set()
+
+    #toLook will be a list sorted by distance to the goal node.
+    #the node with smallest distance to goal will be picked first
+    #initial start distance is irrelavant hence the 10**9
+    toLook = [(start, [start], 10**9)]
+
+    while len(toLook) != 0:
+        explored += 1
+        #takes first element which will always be smallest distance
+        (current, route, n) = toLook.pop(0)
+        if current not in visited:
+            if current == goal:
+                return (route,explored)
+            visited.add(current)
+            for neighbor in graph[current]:
+                absx = abs(goal[0]-current[0])
+                absy = abs(goal[1]-current[1])
+                distance = absx + absy
+
+                toLook = insertToListOfTuples(toLook,(neighbor, route + [neighbor],distance))
+                                     
+    #if toLook becomes empty every accesible node has been visited and no path has been found
+    return None
+
+#takes tuples with (any,any,int) and sorts by int value
+def insertToListOfTuples(list,insertion):
+    for i in range(0,len(list)):
+        if insertion[2]<list[i][2]:
+            list.insert(i,insertion)
+            return list
+        
+    if len(list)==0:
+        list.insert(0,insertion)
+        return list
+    
+    list.append(insertion)
+    return list
+        
 
 #returns tuple containing a dictionary, and coords of start and end
 #dictionary uses a key for every position that has a - in the maze
@@ -75,7 +117,7 @@ def mazeToDict(filename):
 
 #path is the result from the search
 #origin maze is the original .txt file
-def outputMaze(path,originMaze):
+def outputMaze(path,originMaze,outFile):
     file = open(originMaze)
 
     #is a 2D array where each array is a line - access backwards i.e [y][x] not [x][y]
@@ -88,7 +130,7 @@ def outputMaze(path,originMaze):
         currenty = path[i][1]
         rows[currenty][currentx] ="?"
     #writing to .txt section
-    searchResult = open("searchResult.txt",'w')
+    searchResult = open(outFile,'w')
     #taking each row of characters and converting back to one string seperated by spaces
     for line in rows:
         line = ' '.join(line)
@@ -100,10 +142,21 @@ def outputMaze(path,originMaze):
 def main():
     maze=(input("Please enter the name of your maze\nMust be a .txt file placed in same directory as this .py file\n"))
     graph,start,goal = mazeToDict(maze)
-    result = depthFirstSearch(graph,start,goal)
-    time=0
-    outputMaze(result[0],maze)
-    print("\nYour maze solution is now available in searchResult.txt\nStatistics:\nNodes explored: "+str(result[1])+"\nTime taken: "+str(time)+"\nPath length: "+str(len(result[0]))+"\n")
 
+    startTime = process_time() 
+    depthResult = depthFirstSearch(graph,start,goal)
+    endTime = process_time()
+    depthTime = endTime-startTime
+    outputMaze(depthResult[0],maze,maze+"_DFS_RESULT.txt")
+
+    startTime = process_time()
+    greedyResult = greedySearch(graph,start,goal)
+    endTime = process_time()
+    greedyTime = endTime-startTime
+    outputMaze(greedyResult[0],maze,maze+"_GREEDY_RESULT.txt")
+
+    print("\nYour maze solution is now available in a .txt file\n")
+    print("####Depth First Search####\nStatistics:\nNodes explored: "+str(depthResult[1])+"\nTime taken: "+str(depthTime)+"\nPath length: "+str(len(depthResult[0]))+"\n\n")
+    print("####Greedy Search####\nStatistics:\nNodes explored: "+str(greedyResult[1])+"\nTime taken: "+str(greedyTime)+"\nPath length: "+str(len(greedyResult[0]))+"\n")
 if __name__ == "__main__":
     main()
