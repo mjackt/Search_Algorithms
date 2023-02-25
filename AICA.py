@@ -1,54 +1,35 @@
+import time
+
 #takes array returns index with a dash
 def findDash(line):
     for i in range(0,len(line)):
         if line[i] == "-":
             return i
 
-def depthFirst(graph,start,goal):
-    visited = []
-    route =[]
-    stack = [start]
-    while(len(stack) != 0):
-        current = stack.pop()
-        if current not in route:
-            route.append(current)
-        
+#Takes a graph in the form of a dictionary as created by mazeToDict
+def depthFirstSearch(graph,start, goal):
+    visited = set()
+    #The stack stores tuples containg the nodes that need to be visted and the path that got to said node
+    #This eliminates need for having checks to remove nodes from path when backtracking which was slowing it down massively
+
+    #i.e a stack value for node G could be ('G',['A','D','E','G'])
+    stack = [(start, [start])]
+
+    while len(stack) != 0:
+        (current, route) = stack.pop()
         if current not in visited:
-            newDiscover = False
-            for neighbour in graph[current]:
-                stack.append(neighbour)
-                if neighbour not in visited:
-                    newDiscover = True
+            if current == goal:
+                return route
+            visited.add(current)
+            for neighbor in graph[current]:
+                stack.append((neighbor, route + [neighbor]))
+    #if the stack becomes empty every accesible node has been visited and no path has been found
+    return None
 
-                if neighbour == goal:
-                    route.append(goal)
-                    return route
-            
-            #if newDiscover is true it means that a new node has been found meaning the search hasnt reached a dead end.
-            #if newDisover is false a dead end has been reached and it must begin 'backtracking'
-            if (newDiscover==False):
-                route.pop()
-
-            visited.append(current)
-
-        #checking whether the search is currently 'backtracking' through nodes already fully visited or if the search has discovered a cycle
-        #if it is then the current node shouldn't be part of the route
-
-        else:
-            remove = True
-            for neighbour in graph[current]:
-                if neighbour not in visited:
-                    remove = False
-
-            if(remove):
-                route.pop()
-        
-    return "nope"
-
-def coordString(x,y):
-    return  str(x) +","+str(y)
 
 #returns tuple containing a dictionary, and coords of start and end
+#dictionary uses a key for every position that has a - in the maze
+#each key's value is an array of accessible neighbours
 def mazeToDict(filename):
     #Each row is an array so accesing means you need to flip coords.
     # i.e [y][x]
@@ -58,10 +39,10 @@ def mazeToDict(filename):
         Coord2DArray.append(line.split())
     #Now we have a full 2D array of coords
     startx = findDash(Coord2DArray[0])
-    start = coordString(startx,0)
+    start = (startx,0)
 
     goalx = findDash(Coord2DArray[-1])
-    goal = coordString(goalx,len(Coord2DArray)-1)
+    goal = (goalx,len(Coord2DArray)-1)
 
     file.close()
     dictionary = {}
@@ -69,26 +50,52 @@ def mazeToDict(filename):
     for y in range(0,len(Coord2DArray)):
         for x in range(0,len(Coord2DArray[y])):
             if Coord2DArray[y][x] == "-":
-                dictionary[coordString(x,y)] = []
+                dictionary[(x,y)] = []
 
                 #multiple ifs prevent accessing errors
                 #above
                 if y>0:
                     if Coord2DArray[y-1][x]=="-":
-                        dictionary[coordString(x,y)].append(coordString(x,y-1))
+                        dictionary[(x,y)].append((x,y-1))
                 #below
                 if y<len(Coord2DArray)-1:
                     if Coord2DArray[y+1][x]=="-":
-                        dictionary[coordString(x,y)].append(coordString(x,y+1))
+                        dictionary[(x,y)].append((x,y+1))
                 #left
                 if x>0:
                     if Coord2DArray[y][x-1]=="-":
-                        dictionary[coordString(x,y)].append(coordString(x-1,y))
+                        dictionary[(x,y)].append((x-1,y))
                 #right
                 if x<len(Coord2DArray[y])-1:
                     if Coord2DArray[y][x+1]=="-":
-                        dictionary[coordString(x,y)].append(coordString(x+1,y))
+                        dictionary[(x,y)].append((x+1,y))
     return (dictionary,start,goal)
 
-graph,start,goal = mazeToDict("maze-Large.txt")
-print(depthFirst(graph,start,goal))
+#path is the result from the search
+#origin maze is the original .txt file
+def outputMaze(path,originMaze):
+    file = open(originMaze)
+
+    #is a 2D array where each array is a line - access backwards i.e [y][x] not [x][y]
+    rows = []
+    for line in file:
+        chars = line.split()
+        rows.append(chars)
+    for i in range(0,len(path)):
+        currentx = path[i][0]
+        currenty = path[i][1]
+        rows[currenty][currentx] ="?"
+    #writing to .txt section
+    searchResult = open("searchResult.txt",'w')
+    #taking each row of characters and converting back to one string seperated by spaces
+    for line in rows:
+        line = ' '.join(line)
+        line = line + "\n"
+        searchResult.write(line)
+    #now rows is just a list of strings
+    searchResult.close()
+
+maze = "maze-Medium.txt"
+graph,start,goal = mazeToDict(maze)
+result = depthFirstSearch(graph,start,goal)
+outputMaze(result,maze)
